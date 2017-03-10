@@ -21,10 +21,11 @@ var util = require('util');
 var async = require('async');
 
 // Instantiate a Bluetooth Controller object. Controls all BLE Central and Peripheral methods (depending on role).
-function BluetoothController(hardware, callback) {
-  this.hardware = hardware;
+function BluetoothController(serialport, callback) {
+  this.serialport = serialport;
   this.isAdvertising = false;
-  this.messenger = new Messenger(hardware);
+  console.log("Initialize Messenger.");
+  this.messenger = new Messenger(serialport);
   this._connectedPeripherals = {};
 
   this.profile = profile;
@@ -1753,7 +1754,7 @@ BluetoothController.prototype.writeLocalHandle = function(handle, data, callback
 };
 
 /*
-* HARDWARE
+* serialport
 */
 
 BluetoothController.prototype.I2C = function(address) {
@@ -2157,8 +2158,8 @@ BluetoothController.prototype.dfuUpdate = function(callback) {
 };
 
 // Set the module port of the Bluetooth Low Energy module to initialize
-function use(hardware, callback) {
-  var controller = new BluetoothController(hardware, callback);
+function use(serialport, callback) {
+  var controller = new BluetoothController(serialport, callback);
   return controller;
 }
 
