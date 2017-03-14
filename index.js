@@ -21,11 +21,10 @@ var util = require('util');
 var async = require('async');
 
 // Instantiate a Bluetooth Controller object. Controls all BLE Central and Peripheral methods (depending on role).
-function BluetoothController(serialport, callback) {
+function BluetoothController(serialport) {
   this.serialport = serialport;
   this.isAdvertising = false;
-  console.log("Initialize Messenger.");
-  this.messenger = new Messenger(serialport);
+  this.messenger = new Messenger(this.serialport);
   this._connectedPeripherals = {};
 
   this.profile = profile;
@@ -54,50 +53,15 @@ function BluetoothController(serialport, callback) {
   this.messenger.on('ADCRead', this.onADCRead.bind(this));
   this.messenger.on('bondStatus', this.onBondStatus.bind(this));
   this.messenger.on('indicated', this.onIndicated.bind(this));
-
-  // Once the messenger says we're ready, call callback and emit event
-  this.messenger.once('ready', this.bootSequence.bind(this, callback));
-
-  // If there was an error, let us know
-  this.messenger.once('error', this.bootSequence.bind(this, callback));
+  this.messenger.on('ready', function() {
+    this.emit('ready');
+  }.bind(this));
 }
 
 util.inherits(BluetoothController, events.EventEmitter);
 
-BluetoothController.prototype.bootSequence = function(callback, err) {
-
-// Tell any ble listeners
-  if (!err) {
-    this.createGPIOs();
-    // Set default adevertising data
-    // LE General Discoverable / BR/EDR not supported
-    // Short device name: Tessel
-    this.setAdvertisingData([0x02, 0x01, 0x06, 0x07, 0x08, 0x54, 0x65, 0x73, 0x73, 0x65, 0x6c], function(){
-      setImmediate(function() {
-        this.emit('ready');
-        // Call the callback
-        if (callback) {
-          callback(null, this);
-        }
-      }.bind(this));
-    }.bind(this));
-  } else {
-    // Emit the error
-    setImmediate(function() {
-      this.emit('error', err);
-      // Call the callback
-      if (callback) {
-        callback(err, this);
-      }
-    }.bind(this));
-  }
-
-  this.messenger.removeAllListeners('error');
-  this.messenger.removeAllListeners('ready');
-};
-
-BluetoothController.prototype.reset = function(callback) {
-  this.messenger.reset(callback);
+BluetoothController.prototype.systemReset = function() {
+  this.messenger.systemReset();
 };
 /**********************************************************
  Event Handlers
@@ -163,7 +127,6 @@ BluetoothController.prototype.onConnectionStatus = function(status) {
     // If we're in master mode
     // Grab the peripheral
     this.getPeripheralFromData(null, null, status.address, status.address_type, function(peripheral, undiscovered) {
-
       if (peripheral) {
         // Set the connection number and flags
         peripheral.connection = status.connection;
@@ -184,11 +147,12 @@ BluetoothController.prototype.onConnectionStatus = function(status) {
       }
     }.bind(this));
   }
+
+  // Forward event.
   this.emit('connectionStatus', status);
 };
 
 BluetoothController.prototype.onDisconnect = function(response) {
-
   var peripheral = this._connectedPeripherals[response.connection];
 
   // If we have a peripheral (we're acting as master)
@@ -417,10 +381,21 @@ BluetoothController.prototype.getPeripheralFromData = function(rssi, data, addre
 
 BluetoothController.prototype.connect = function(peripheral, callback) {
   this.messenger.connect(peripheral.address.toBuffer(), peripheral.addressType, function(err, response) {
+    // This is used as a callback after the peer sends the first connection status.
+    // In that packet there is a flag that tells me if the connection is new.
+    // When that flag is set, this function will get called so I can
+    // emit 'connect' on the peripheral object.
     function connectCallback(connectedPeripheral) {
-      if (peripheral === connectedPeripheral) {
+      if (peripheral.address.equals(connectedPeripheral.address)) {
         // Remove this listener
         self.removeListener('connect', connectCallback);
+
+        // Update peripheral with the status from status message
+        peripheral.connection = connectedPeripheral.connection;
+        peripheral.flags = connectedPeripheral.flags;
+        peripheral.bondHandle = connectedPeripheral.bonding;
+        peripheral.connected = connectedPeripheral.connected;
+
         // Call the callback
         if (callback) {
           callback();
@@ -431,12 +406,11 @@ BluetoothController.prototype.connect = function(peripheral, callback) {
         });
       }
     }
+
     // If there was an error
     if (err) {
       // Call the callback
-      if (callback) {
-        callback(err);
-      }
+      callback && callback(err);
       return;
     } else {
       var self = this;
@@ -509,13 +483,11 @@ BluetoothController.prototype.discoverAllAttributes = function(peripheral, callb
   }.bind(this));
 };
 
-BluetoothController.prototype.discoverAllServices = function(peripheral, callback)
-{
+BluetoothController.prototype.discoverAllServices = function(peripheral, callback) {
   this.discoverServices(peripheral, [], callback);
 };
 
-BluetoothController.prototype.discoverServices = function(peripheral, filter, callback)
-{
+BluetoothController.prototype.discoverServices = function(peripheral, filter, callback) {
   // Discover the services of this device
   this.serviceDiscovery(peripheral, false, function(err, allServices) {
     if (err) {
@@ -1086,7 +1058,6 @@ BluetoothController.prototype.readAttribute = function(attribute, callback) {
     }
   }.bind(this));
 };
-
 
 BluetoothController.prototype.write = function(characteristic, value, callback) {
   this.writeAttribute(characteristic, value, function(err, written) {
