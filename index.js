@@ -40,8 +40,8 @@ function BluetoothController(serialport) {
 
   this.messenger.on('scanStart', this.onScanStart.bind(this));
   this.messenger.on('scanStop', this.onScanStop.bind(this));
+	this.messenger.on('connectionStatus', this.onConnectionStatus.bind(this));
   this.messenger.on('discover', this.onDiscover.bind(this));
-  this.messenger.on('connectionStatus', this.onConnectionStatus.bind(this));
   this.messenger.on('disconnect', this.onDisconnect.bind(this));
   this.messenger.on('groupFound', this.onGroupFound.bind(this));
   this.messenger.on('completedProcedure', this.onCompletedProcedure.bind(this));
@@ -200,7 +200,7 @@ BluetoothController.prototype.onFindInformationFound = function(info) {
  */
 BluetoothController.prototype.onAttributeValue = function(value) {
   // We have a notification
-  if (value.type === 1) {
+  if (value.type == 1) {
     // Grab the peripheral responsible
     var peripheral = this._connectedPeripherals[value.connection];
     // If it exists (it better!)
@@ -211,14 +211,13 @@ BluetoothController.prototype.onAttributeValue = function(value) {
       if (characteristic) {
         // Set the value
         characteristic.value = value.value;
-
         // Emit events
         this.emit('notification', characteristic, characteristic.value);
         peripheral.emit('notification', characteristic, characteristic.value);
         characteristic.emit('notification', characteristic.value);
       }
     }
-  } else if (value.type === 2 || value.type === 5) {
+  } else if (value.type == 2 || value.type == 5) {
     // We have an indication
     // Grab the peripheral responsible
     var peripheral = this._connectedPeripherals[value.connection];
@@ -398,7 +397,7 @@ BluetoothController.prototype.connect = function(peripheral, callback) {
 
         // Call the callback
         if (callback) {
-          callback();
+          callback(null, peripheral);
         }
         setImmediate(function() {
           // Let any listeners know
@@ -410,7 +409,7 @@ BluetoothController.prototype.connect = function(peripheral, callback) {
     // If there was an error
     if (err) {
       // Call the callback
-      callback && callback(err);
+      callback && callback(err, null);
       return;
     } else {
       var self = this;
