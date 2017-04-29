@@ -59,4 +59,16 @@
   , "1815" : { "name" : "Cycling Speed and Cadence"
              , "type" : "org.bluetooth.service.cycling_speed_and_cadence"
              }
+  , "4d415445533943412049554c49414e71" :
+           { "name" : "Control Service"
+           , "type" : "com.entymed.service.control_service"
+           }
+  , "865b36941e804a1c9ed635cd0d46457d" :
+          { "name" : "IMU Service"
+          , "type" : "com.entymed.service.imu_service"
+          }
+  , "763fd401f5e311e6bc6492361f002671" :
+           { "name" : "Environment Service"
+           , "type" : "com.entymed.service.environment_service"
+           }
 }

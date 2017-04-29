@@ -215,4 +215,28 @@
   , "2a5d" : { "name" : "Sensor Location"
              , "type" : "org.bluetooth.characteristic.sensor_location"
              }
+  , "4d415446533943412049554c49414e71" :
+            { "name" : "Status Characteristic"
+            , "type" : "com.entymed.characteristic.status"
+            }
+  , "4d415447533943412049554c49414e71" :
+            { "name" : "Control Characteristic"
+            , "type" : "com.entymed.characteristic.control"
+            }
+  , "865b36951e804a1c9ed635cd0d46457d" :
+            { "name" : "Euler Characteristic"
+            , "type" : "com.entymed.characteristic.euler"
+            }
+	, "865b36961e804a1c9ed635cd0d46457d" :
+            { "name" : "Linear Acceleration Characteristic"
+            , "type" : "com.entymed.characteristic.linacc"
+            }
+  , "763fd402f5e311e6bc6492361f002671" :
+            { "name" : "Temperature Characteristic"
+            , "type" : "com.entymed.characteristic.temperature"
+            }
+  , "763fd403f5e311e6bc6492361f002671" :
+            { "name" : "Pressure Characteristic"
+            , "type" : "com.entymed.characteristic.pressure"
+            }
 }

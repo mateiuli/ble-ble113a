@@ -1069,7 +1069,7 @@ BluetoothController.prototype.write = function(characteristic, value, callback) 
     if (!err) {
       setImmediate(function() {
         this.emit('characteristicWrite', characteristic, written);
-        characteristic._peripheral.emit('characteristicWrite', characteristic, written);
+        //characteristic._peripheral.emit('characteristicWrite', characteristic, written);
         characteristic.emit('write', written);
       }.bind(this));
     }
@@ -1113,7 +1113,6 @@ BluetoothController.prototype.writeAttributeImmediately = function(attribute, si
 
       // If it didn't succeed
       if (procedure.result != 0) {
-
         if (callback) {
           callback(procedure.result, null);
         }
@@ -1483,6 +1482,7 @@ BluetoothController.prototype.writeToConfigDescriptorOfCharacteristic = function
   // Check if we've already fetched the config descriptor
   this.retrieveConfigDescriptor(characteristic, function(err, descriptor) {
     if (err) {
+			console.log("Could not found CCD");
       return callback && callback(err);
     } else {
       if (!descriptor) {
